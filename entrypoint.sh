@@ -26,6 +26,12 @@ if [ "${1}" == "register" ] && [ -f /config/uln.conf ] && [ ! -f /etc/sysconfig/
     fi
 fi
 
+# Test the repo configuration
+if ! jq . >/dev/null 2>&1 <<</config/repos.json; then
+    echo "Invalid JSON syntax in /config/repos.json"
+    exit 1
+fi
+
 # Find and sync the yum.oracle.com repos
 if [ -f /config/repos.json ] && [ -d /repo ]; then
     echo "Starting sync."
