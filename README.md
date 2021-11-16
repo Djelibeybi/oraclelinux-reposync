@@ -12,7 +12,7 @@ It also includes a web server image that can be used to serve the content.
 To build the image, clone this repo and run:
 
 ```bash
-docker build -t container-reposync .
+docker build -t oraclelinux-reposync .
 ```
 
 ## Configuration
@@ -59,7 +59,7 @@ ULN credentials provided in `config/uln.conf`:
 docker run --rm -it \
   -v ${PWD}/rhn:/etc/sysconfig/rhn \
   -v ${PWD}/config:/config \
-  container-reposync register
+  oraclelinux-reposync register
 ```
 
 This may take a few minutes and will return to the command prompt when done.
@@ -76,7 +76,7 @@ docker run --rm -it \
   -v ${PWD}/rhn:/etc/sysconfig/rhn \
   -v ${PWD}/config:/config \
   -v ${PWD}/repo:/repo \
-  container-reposync
+  oraclelinux-reposync
 ```
 
 The container will automatically subscribe and subscribe to each channel
@@ -95,19 +95,19 @@ Apache 2.4 for this  purpose.
 Build the `httpd-server` server image:
 
 ```bash
-docker build -t httpd-server -f Dockerfile.httpd .
+docker build -t oraclelinux-reposerver -f Dockerfile.httpd .
 ```
 
-Create and start a container named `yum-server` using the image:
+Create and start a container named `oraclelinux-reposerver` using the image:
 
 ```bash
-docker run --detach --name yum-server \
+docker run --detach --name oraclelinux-reposerver \
   -p 8080:80 \
   -v ${PWD}/repo:/var/www/html/repo:ro \
-  httpd-server
+  oraclelinux-reposerver
 ```
 
-Note that the `repo/` directory is bound read-only into the `yum-server`
+Note that the `repo/` directory is bound read-only into the `oraclelinux-reposerver`
 container. This allows the container to continue running and serving clients
 while the repos are updated.
 
@@ -123,7 +123,7 @@ vulnerability disclosure process.
 
 ## License
 
-Copyright (c) 2021 Oracle and/or its affiliates.
+Copyright (c) 2020, 2021 Avi Miller.
 
 Released under the Universal Permissive License v1.0 as shown at
 <https://oss.oracle.com/licenses/upl/>.
