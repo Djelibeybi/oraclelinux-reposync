@@ -27,7 +27,7 @@ if [ "${1}" == "register" ] && [ -f /config/uln.conf ] && [ ! -f /etc/sysconfig/
 fi
 
 # Test the repo configuration
-if ! jq empty /config/repos.json 2>/dev/null; then
+if jq empty /config/repos.json 2>/dev/null; then
     echo "Verified /config/repos.json contains valid JSON."
 else
     echo "Invalid JSON syntax in /config/repos.json. Stopping sync."
