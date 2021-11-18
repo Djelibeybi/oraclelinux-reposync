@@ -1,5 +1,8 @@
 # Ignore files that may contain secrets
-repo/
-rhn/
+rhn/systemid
+rhn/up2date
 config/repos.json
 config/uln.conf
+config/repo-map.json*
+repo/**/*
+!.gitkeep
