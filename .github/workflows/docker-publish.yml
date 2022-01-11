@@ -6,7 +6,7 @@ name: Build and Publish Repo Sync Image
 # documentation.
 
 on:
-  workflow_trigger:
+  workflow_dispatch:
 #  schedule:
 #    - cron: '39 4 * * *'
 #  push:
