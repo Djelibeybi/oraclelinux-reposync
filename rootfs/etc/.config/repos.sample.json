@@ -1,0 +1,10 @@
+{
+    "uln": [
+        "ol7_x86_64_userspace_ksplice",
+        "ol7_aarch64_userspace_ksplice"
+    ],
+    "yum": [
+        "ol7_x86_64_olcne11",
+        "ol7_x86_64_olcne12"
+    ]
+}
