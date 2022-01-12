@@ -80,7 +80,7 @@ much higher download speeds than ULN.
 
     If you don't want to build your own image locally, replace `ol-repo-sync` with
     `ghcr.io/djelibeybi/ol-repo-sync` in all the following examples to use the
-    [djelibeybi/ol-repo-sync][sync-image] image published to GitHub Container Registry.
+    [`djelibeybi/ol-repo-sync`][reposync-image] image published to GitHub Container Registry.
 
 ## Syncing repo content
 
@@ -115,8 +115,8 @@ much higher download speeds than ULN.
    ```
 
 7. Create and start a container named `ol-repo-webserver` using the image built
-   locally. You can replace `ol-repo-webserver` with `ghcr.io/djelibeybi/
-   ol-repo-webserver` to use the imag published on GitHub Container Registry:
+   locally or replace `ol-repo-webserver` with `ghcr.io/djelibeybi/
+   ol-repo-webserver` to use the [`ol-repo-webserver`][webserver-image] image published on GitHub Container Registry:
 
     ```bash
     docker run --detach
@@ -144,5 +144,5 @@ Released under the Universal Permissive License v1.0 as shown at
 
 [ULN]: https://linux.oracle.com
 [YUM]: https://yum.oracle.com
-[sync-image]:
-[web-image]:
+[reposync-image]: https://github.com/Djelibeybi/oraclelinux-reposync/pkgs/container/ol-repo-sync
+[webserver-image]: https://github.com/Djelibeybi/oraclelinux-reposync/pkgs/container/ol-repo-webserver
