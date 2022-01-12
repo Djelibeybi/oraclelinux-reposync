@@ -9,8 +9,8 @@ security related. When filing a bug remember that the better written the bug is,
 the more likely it is to be fixed.
 
 If you think you've found a security vulnerability, do not raise a GitHub issue.
-Please email <sec@dje.li> directly. You may chose to encrypt your email using
-our [public GPG key](./gpg-key.asc)
+Please email <security@dje.li> directly. You may chose to encrypt your email using
+[my public GPG key](./gpg-key.asc)
 
 ## Pull request process
 
