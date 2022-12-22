@@ -1,0 +1,178 @@
+name: Build and publish container images
+
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: '17 6 * * *'
+  pull_request:
+    branches: [ main ]
+  push:
+    branches: [ main ]
+    tags: [ 'v*.*.*' ]
+
+jobs:
+
+  check-base-images:
+
+    name: Check base images on scheduled runs
+
+    runs-on: ubuntu-22.04
+    permissions:
+      contents: read
+      packages: read
+      id-token: read
+
+    outputs:
+      build-reposync: ${{ steps.reposync-base-image-check.outputs.build }}
+      build-webserver: ${{ steps.webserver-base-image-check.outputs.build }}
+
+    steps:
+
+      - name: Check base image for ol-repo-sync
+        id: reposync-base-image-check
+        if: github.event_name == 'schedule'
+        run : |
+          BASE_LAYERS=$(skopeo inspect --config --no-tags docker://ghcr.io/oracle/oraclelinux8-python:3.9-amd64 | jq -r '.rootfs.diff_ids[]')
+          REPO_LAYERS=$(skopeo inspect --config --no-tags docker://ghcr.io/djelibeybi/ol-repo-sync:main | jq -r '.rootfs.diff_ids[]')
+          if [ -n "${REPO_LAYERS##*$BASE_LAYERS*}" ]; then
+            echo "build=YES" >> $GITHUB_OUTPUT
+            echo ""
+          else
+            echo "build=NO" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Check base image for ol-repo-webserver
+        id: webserver-base-image-check
+        if: github.event_name == 'schedule'
+        run: |
+          BASE_LAYERS=$(skopeo inspect --config --no-tags docker://ghcr.io/oracle/oraclelinux:8-slim | jq -r '.rootfs.diff_ids[]')
+          REPO_LAYERS=$(skopeo inspect --config --no-tags docker://ghcr.io/djelibeybi/ol-repo-webserver:main | jq -r '.rootfs.diff_ids[]')
+          if [ -n "${REPO_LAYERS##*$BASE_LAYERS*}" ]; then
+            echo "build=YES" >> $GITHUB_OUTPUT
+            echo ""
+          else
+            echo "build=NO" >> $GITHUB_OUTPUT
+          fi
+
+
+  build-repo-sync-image:
+
+    name: Build ol-repo-sync image
+
+    needs: check-base-images
+
+    env:
+      REGISTRY: ghcr.io
+      IMAGE_NAME: djelibeybi/ol-repo-sync
+
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+      id-token: write
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+
+      - name: Install cosign
+        if: github.event_name != 'pull_request'
+        uses: sigstore/cosign-installer@main
+        with:
+          cosign-release: 'v1.13.1'
+
+      - name: Setup Docker buildx
+        uses: docker/setup-buildx-action@v2
+
+      - name: Log into registry ${{ env.REGISTRY }}
+        if: github.event_name != 'pull_request'
+        uses: docker/login-action@v2
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Extract container metadata
+        id: meta
+        uses: docker/metadata-action@v4
+        with:
+          images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
+
+      - name: Build and push container image
+        id: build-and-push
+        uses: docker/build-push-action@v3
+        if: github.event_name != 'schedule' || needs.check-base-images.outputs.build-reposync == 'YES'
+        with:
+          context: .
+          platforms: linux/amd64,linux/arm64
+          push: ${{ github.event_name != 'pull_request' }}
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+
+      - name: Sign the published container image
+        if: ${{ github.event_name != 'pull_request' }}
+        env:
+          COSIGN_EXPERIMENTAL: "true"
+        run: cosign sign ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}@${{ steps.build-and-push.outputs.digest }}
+
+  build-webserver-image:
+
+    name: Build ol-repo-webserver image
+
+    needs: check-base-images
+
+    env:
+      REGISTRY: ghcr.io
+      IMAGE_NAME: djelibeybi/ol-repo-webserver
+
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+      id-token: write
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+
+      - name: Install cosign
+        if: github.event_name != 'pull_request'
+        uses: sigstore/cosign-installer@main
+        with:
+          cosign-release: 'v1.13.1'
+
+      - name: Setup Docker buildx
+        uses: docker/setup-buildx-action@v2
+
+      - name: Log into registry ${{ env.REGISTRY }}
+        if: github.event_name != 'pull_request'
+        uses: docker/login-action@v2
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Extract container metadata
+        id: meta
+        uses: docker/metadata-action@v4
+        with:
+          images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
+
+      - name: Build and push Docker image
+        id: build-and-push
+        uses: docker/build-push-action@v3
+        if: github.event_name != 'schedule' || needs.check-base-images.outputs.build-webserver == 'YES'
+        with:
+          context: .
+          file: ./Dockerfile.nginx
+          platforms: linux/amd64,linux/arm64
+          push: ${{ github.event_name != 'pull_request' }}
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+
+      - name: Sign the published Docker image
+        if: ${{ github.event_name != 'pull_request' }}
+        env:
+          COSIGN_EXPERIMENTAL: "true"
+        run: cosign sign ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}@${{ steps.build-and-push.outputs.digest }}
