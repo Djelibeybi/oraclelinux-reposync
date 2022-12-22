@@ -18,10 +18,6 @@ jobs:
     name: Check base images on scheduled runs
 
     runs-on: ubuntu-22.04
-    permissions:
-      contents: read
-      packages: read
-      id-token: read
 
     outputs:
       build-reposync: ${{ steps.reposync-base-image-check.outputs.build }}
