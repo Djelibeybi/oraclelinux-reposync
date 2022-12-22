@@ -5,6 +5,8 @@ on:
   workflow_dispatch:
   schedule:
     - cron: '17 6 * * *'
+  pull_request:
+    branches: [ main ]
   push:
     branches: [ main ]
     tags: [ 'v*.*.*' ]
