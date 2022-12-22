@@ -3,6 +3,8 @@ name: Build, publish and sign the reposync image
 
 on:
   workflow_dispatch:
+  schedule:
+    - cron: '17 6 * * *'
   push:
     branches: [ main ]
     tags: [ 'v*.*.*' ]
@@ -24,7 +26,24 @@ jobs:
 
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v2
+        uses: actions/checkout@v3
+
+      - name: Check for newer base image on scheduled runs
+        if: github.event_name == 'schedule'
+        run: |
+          BASE_LAYERS=$(skopeo inspect --config --no-tags docker://ghcr.io/oracle/oraclelinux8-python:3.9-amd64 | jq -r '.rootfs.diff_ids[]')
+          REPO_LAYERS=$(skopeo inspect --config --no-tags docker://ghcr.io/djelibeybi/ol-repo-sync:main | jq -r '.rootfs.diff_ids[]')
+          if [ -n "${REPO_LAYERS##*$BASE_LAYERS*}" ]; then
+            echo "BUILD_IMAGE=YES" >> $GITHUB_ENV
+            echo ""
+          else
+            echo "BUILD_IMAGE=NO" >> $GITHUB_ENV
+          fi
+
+      - name: Trigger builds for unscheduled runs
+        if: github.event_name != 'schedule'
+        run: |
+          echo "BUILD_IMAGE=YES" >> $GITHUB_ENV
 
       - name: Install cosign
         if: github.event_name != 'pull_request'
@@ -43,15 +62,16 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Extract Docker metadata
+      - name: Extract container metadata
         id: meta
         uses: docker/metadata-action@98669ae865ea3cffbcbaa878cf57c20bbf1c6c38
         with:
           images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
 
-      - name: Build and push Docker image
+      - name: Build and push container image
         id: build-and-push
         uses: docker/build-push-action@ad44023a93711e3deb337508980b4b5e9bcdc5dc
+        if: env.BUILD_IMAGE == 'YES'
         with:
           context: .
           platforms: linux/amd64,linux/arm64
@@ -59,7 +79,7 @@ jobs:
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
 
-      - name: Sign the published Docker image
+      - name: Sign the published container image
         if: ${{ github.event_name != 'pull_request' }}
         env:
           COSIGN_EXPERIMENTAL: "true"
