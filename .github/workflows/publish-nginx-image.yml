@@ -3,6 +3,8 @@ name: Build, publish and sign the NGINX webserver image
 
 on:
   workflow_dispatch:
+  schedule:
+    - cron: '36 6 * * *'
   push:
     branches: [ main ]
     tags: [ 'v*.*.*' ]
@@ -24,7 +26,24 @@ jobs:
 
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v2
+        uses: actions/checkout@v3
+
+      - name: Check for newer base image on scheduled runs
+        if: github.event_name == 'schedule'
+        run: |
+          BASE_LAYERS=$(skopeo inspect --config --no-tags docker://ghcr.io/oracle/oraclelinux:8-slim | jq -r '.rootfs.diff_ids[]')
+          REPO_LAYERS=$(skopeo inspect --config --no-tags docker://ghcr.io/djelibeybi/ol-repo-webserver:main | jq -r '.rootfs.diff_ids[]')
+          if [ -n "${REPO_LAYERS##*$BASE_LAYERS*}" ]; then
+            echo "BUILD_IMAGE=YES" >> $GITHUB_ENV
+            echo ""
+          else
+            echo "BUILD_IMAGE=NO" >> $GITHUB_ENV
+          fi
+
+      - name: Trigger builds for unscheduled runs
+        if: github.event_name != 'schedule'
+        run: |
+          echo "BUILD_IMAGE=YES" >> $GITHUB_ENV
 
       - name: Install cosign
         if: github.event_name != 'pull_request'
@@ -43,7 +62,7 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Extract Docker metadata
+      - name: Extract container metadata
         id: meta
         uses: docker/metadata-action@98669ae865ea3cffbcbaa878cf57c20bbf1c6c38
         with:
@@ -52,6 +71,7 @@ jobs:
       - name: Build and push Docker image
         id: build-and-push
         uses: docker/build-push-action@ad44023a93711e3deb337508980b4b5e9bcdc5dc
+        if: env.BUILD_IMAGE == "YES"
         with:
           context: .
           file: ./Dockerfile.nginx
