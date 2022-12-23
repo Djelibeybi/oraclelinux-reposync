@@ -1,7 +1,15 @@
+[ol9_release_packages]
+name=Release Packges for Oracle Linux 9
+baseurl=https://yum.oracle.com/repo/OracleLinux/OL9/baseos/latest/$basearch/
+gpgkey=https://yum.oracle.com/RPM-GPG-KEY-oracle-ol9
+gpgcheck=1
+enabled=0
+includepkgs=*-release-el9 *-release
+
 [ol8_release_packages]
 name=Release Packges for Oracle Linux 8
 baseurl=https://yum.oracle.com/repo/OracleLinux/OL8/baseos/latest/$basearch/
-gpgkey=file:///etc/pki/rpm-gpg/RPM-GPG-KEY-oracle
+gpgkey=file:///etc/pki/rpm-gpg/RPM-GPG-KEY-oracle-ol8
 gpgcheck=1
 enabled=0
 includepkgs=*-release-el8 *-release
@@ -9,7 +17,7 @@ includepkgs=*-release-el8 *-release
 [ol7_release_packages]
 name=Release Packages for Oracle Linux 7
 baseurl=https://yum.oracle.com/repo/OracleLinux/OL7/latest/$basearch/
-gpgkey=file:///etc/pki/rpm-gpg/RPM-GPG-KEY-oracle7
+gpgkey=https://yum.oracle.com/RPM-GPG-KEY-oracle-ol7
 gpgcheck=1
 enabled=0
 includepkgs=*-release-el7 *-release
@@ -17,7 +25,7 @@ includepkgs=*-release-el7 *-release
 [ol6_release_packages]
 name=Release Packages for Oracle Linux 6
 baseurl=https://yum.oracle.com/repo/OracleLinux/OL6/latest/$basearch/
-gpgkey=file:///etc/pki/rpm-gpg/RPM-GPG-KEY-oracle
+gpgkey=https://yum.oracle.com/RPM-GPG-KEY-oracle-ol6
 gpgcheck=1
 enabled=0
 includepkgs=*-release-el6 *-release

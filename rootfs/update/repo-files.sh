@@ -17,23 +17,6 @@ fi
 TEMP_REPO_CONF=$(mktemp --quiet --directory --suffix="dnf")
 cd "$TEMP_REPO_CONF"
 
-# Get the GPG keys from uln-yum-mirror
-echo "Downloading GPG keys from yum.oracle.com..."
-dnf download $QUIET \
-    --repo=ol8_addons \
-    --disableplugin=spacewalk \
-    --downloaddir="$TEMP_REPO_CONF" \
-    --assumeyes \
-    "uln-yum-mirror"
-
-# Import the GPG keys into the rpm database
-cd "$TEMP_REPO_CONF"
-for uln_pkg in *.rpm; do
-    rpm2cpio $uln_pkg | cpio --extract --make-directories --preserve-modification-time $QUIET
-    rpm --import "$TEMP_REPO_CONF"/etc/pki/rpm-gpg/RPM-GPG-KEY-oracle-*
-    rm -f "$uln_pkg"
-done
-
 # Download all the release RPMs
 echo "Downloading release packages for Oracle Linux from yum.oracle.com..."
 dnf download $QUIET \
