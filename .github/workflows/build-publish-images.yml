@@ -27,7 +27,7 @@ jobs:
 
       - name: Check base image for ol-repo-sync
         id: reposync-base-image-check
-        if: github.event_name == 'schedule' || github.event_name == "workflow_dispatch"
+        if: contains(fromJson('["schedule", "workflow_dispatch"]'), github.event_name)
         run : |
           BASE_LAYERS=$(skopeo inspect --config docker://ghcr.io/oracle/oraclelinux8-python:3.9-amd64 | jq -r '.rootfs.diff_ids[]')
           REPO_LAYERS=$(skopeo inspect --config docker://ghcr.io/djelibeybi/ol-repo-sync:main | jq -r '.rootfs.diff_ids[]')
@@ -40,7 +40,7 @@ jobs:
 
       - name: Check base image for ol-repo-webserver
         id: webserver-base-image-check
-        if: github.event_name == 'schedule' || github.event_name == "workflow_dispatch"
+        if: contains(fromJson('["schedule", "workflow_dispatch"]'), github.event_name)
         run: |
           BASE_LAYERS=$(skopeo inspect --config docker://ghcr.io/oracle/oraclelinux:8-slim | jq -r '.rootfs.diff_ids[]')
           REPO_LAYERS=$(skopeo inspect --config docker://ghcr.io/djelibeybi/ol-repo-webserver:main | jq -r '.rootfs.diff_ids[]')
