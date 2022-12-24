@@ -27,10 +27,10 @@ jobs:
 
       - name: Check base image for ol-repo-sync
         id: reposync-base-image-check
-        if: github.event_name == 'schedule'
+        if: github.event_name == 'schedule' || github.event_name == "workflow_dispatch"
         run : |
-          BASE_LAYERS=$(skopeo inspect --config --no-tags docker://ghcr.io/oracle/oraclelinux8-python:3.9-amd64 | jq -r '.rootfs.diff_ids[]')
-          REPO_LAYERS=$(skopeo inspect --config --no-tags docker://ghcr.io/djelibeybi/ol-repo-sync:main | jq -r '.rootfs.diff_ids[]')
+          BASE_LAYERS=$(skopeo inspect --config docker://ghcr.io/oracle/oraclelinux8-python:3.9-amd64 | jq -r '.rootfs.diff_ids[]')
+          REPO_LAYERS=$(skopeo inspect --config docker://ghcr.io/djelibeybi/ol-repo-sync:main | jq -r '.rootfs.diff_ids[]')
           if [ -n "${REPO_LAYERS##*$BASE_LAYERS*}" ]; then
             echo "build=YES" >> $GITHUB_OUTPUT
             echo ""
@@ -40,10 +40,10 @@ jobs:
 
       - name: Check base image for ol-repo-webserver
         id: webserver-base-image-check
-        if: github.event_name == 'schedule'
+        if: github.event_name == 'schedule' || github.event_name == "workflow_dispatch"
         run: |
-          BASE_LAYERS=$(skopeo inspect --config --no-tags docker://ghcr.io/oracle/oraclelinux:8-slim | jq -r '.rootfs.diff_ids[]')
-          REPO_LAYERS=$(skopeo inspect --config --no-tags docker://ghcr.io/djelibeybi/ol-repo-webserver:main | jq -r '.rootfs.diff_ids[]')
+          BASE_LAYERS=$(skopeo inspect --config docker://ghcr.io/oracle/oraclelinux:8-slim | jq -r '.rootfs.diff_ids[]')
+          REPO_LAYERS=$(skopeo inspect --config docker://ghcr.io/djelibeybi/ol-repo-webserver:main | jq -r '.rootfs.diff_ids[]')
           if [ -n "${REPO_LAYERS##*$BASE_LAYERS*}" ]; then
             echo "build=YES" >> $GITHUB_OUTPUT
             echo ""
