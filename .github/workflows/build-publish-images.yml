@@ -1,20 +1,17 @@
 name: Build and publish container images
 
-
 on:
   workflow_dispatch:
   schedule:
-    - cron: '17 6 * * *'
+    - cron: "17 6 * * *"
   pull_request:
-    branches: [ main ]
+    branches: [main]
   push:
     tags:
-      - '**'
+      - "**"
 
 jobs:
-
   check-base-images:
-
     name: Check base images on scheduled runs
 
     runs-on: ubuntu-22.04
@@ -24,11 +21,10 @@ jobs:
       build-webserver: ${{ steps.webserver-base-image-check.outputs.build }}
 
     steps:
-
       - name: Check base image for ol-repo-sync
         id: reposync-base-image-check
         if: contains(fromJson('["schedule", "workflow_dispatch"]'), github.event_name)
-        run : |
+        run: |
           BASE_LAYERS=$(skopeo inspect --config docker://ghcr.io/oracle/oraclelinux8-python:3.9-amd64 | jq -r '.rootfs.diff_ids[]')
           REPO_LAYERS=$(skopeo inspect --config docker://ghcr.io/djelibeybi/ol-repo-sync:main | jq -r '.rootfs.diff_ids[]')
           if [ -n "${REPO_LAYERS##*$BASE_LAYERS*}" ]; then
@@ -51,12 +47,11 @@ jobs:
             echo "build=NO" >> $GITHUB_OUTPUT
           fi
 
-
   build-repo-sync-image:
-
     name: Build ol-repo-sync image
-
     needs: check-base-images
+
+    if: github.event_name != 'schedule' || needs.check-base-images.outputs.build-reposync == 'YES'
 
     env:
       REGISTRY: ghcr.io
@@ -76,7 +71,7 @@ jobs:
         if: github.event_name != 'pull_request'
         uses: sigstore/cosign-installer@main
         with:
-          cosign-release: 'v1.13.1'
+          cosign-release: "v1.13.1"
 
       - name: Setup Docker buildx
         uses: docker/setup-buildx-action@v2
@@ -98,7 +93,6 @@ jobs:
       - name: Build and push container image
         id: build-and-push
         uses: docker/build-push-action@v3
-        if: github.event_name != 'schedule' || needs.check-base-images.outputs.build-reposync == 'YES'
         with:
           context: .
           platforms: linux/amd64,linux/arm64
@@ -113,11 +107,10 @@ jobs:
         run: cosign sign ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}@${{ steps.build-and-push.outputs.digest }}
 
   build-webserver-image:
-
     name: Build ol-repo-webserver image
 
     needs: check-base-images
-
+    if: github.event_name != 'schedule' || needs.check-base-images.outputs.build-reposync == 'YES'
     env:
       REGISTRY: ghcr.io
       IMAGE_NAME: djelibeybi/ol-repo-webserver
@@ -136,7 +129,7 @@ jobs:
         if: github.event_name != 'pull_request'
         uses: sigstore/cosign-installer@main
         with:
-          cosign-release: 'v1.13.1'
+          cosign-release: "v1.13.1"
 
       - name: Setup Docker buildx
         uses: docker/setup-buildx-action@v2
