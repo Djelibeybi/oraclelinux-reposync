@@ -106,8 +106,8 @@ fi
 
 DNF_ARG_DEFAULTS=(--norepopath --delete --download-metadata --remote-time)
 
-if [ "$SYNC_SRC"  ]; then
-    DNF_ARGS=("${DNF_ARGS[@]}" --excludepkgs=*src.rpm)
+if [ "$SYNC_SRC" != 1 ]; then
+    DNF_ARG_DEFAULTS=("${DNF_ARG_DEFAULTS[@]}" --exclude *.src)
 fi
 
 if [ -z "$YUM_REPOS" ] || [ "$YUM_REPOS" == "" ]; then
