@@ -3,7 +3,7 @@ name: Build and publish container images
 on:
   workflow_dispatch:
   schedule:
-    - cron: "17 6 * * *"
+    - cron: "30 20 * * *"
   pull_request:
     branches: [main]
   push:
@@ -23,35 +23,47 @@ jobs:
     steps:
       - name: Check base image for ol-repo-sync
         id: reposync-base-image-check
-        if: contains(fromJson('["schedule", "workflow_dispatch"]'), github.event_name)
         run: |
           BASE_LAYERS=$(skopeo inspect --config docker://ghcr.io/oracle/oraclelinux8-python:3.9-amd64 | jq -r '.rootfs.diff_ids[]')
           REPO_LAYERS=$(skopeo inspect --config docker://ghcr.io/djelibeybi/ol-repo-sync:main | jq -r '.rootfs.diff_ids[]')
           if [ -n "${REPO_LAYERS##*$BASE_LAYERS*}" ]; then
             echo "build=YES" >> $GITHUB_OUTPUT
-            echo ""
+            echo "::notice title=Checking base images::Triggering build for ol-repo-sync"
           else
             echo "build=NO" >> $GITHUB_OUTPUT
+            echo "::notice title=Checking base images::Skipping build for ol-repo-sync"
           fi
 
       - name: Check base image for ol-repo-webserver
         id: webserver-base-image-check
-        if: contains(fromJson('["schedule", "workflow_dispatch"]'), github.event_name)
         run: |
           BASE_LAYERS=$(skopeo inspect --config docker://ghcr.io/oracle/oraclelinux:8-slim | jq -r '.rootfs.diff_ids[]')
           REPO_LAYERS=$(skopeo inspect --config docker://ghcr.io/djelibeybi/ol-repo-webserver:main | jq -r '.rootfs.diff_ids[]')
           if [ -n "${REPO_LAYERS##*$BASE_LAYERS*}" ]; then
             echo "build=YES" >> $GITHUB_OUTPUT
-            echo ""
+            echo "::notice title=Checking base images::Triggering build for ol-repo-webserver"
           else
             echo "build=NO" >> $GITHUB_OUTPUT
+            echo "::notice title=Checking base images::Skipping build for ol-repo-webserver"
           fi
+
+  log-base-image-checks:
+    name: Log check for base images
+    runs-on: ubuntu-22.04
+    needs: check-base-images
+    steps:
+      - env:
+          REPOSYNC: ${{ needs.check-base-images.outputs.build-reposync }}
+          WEBSERVER: ${{ needs.check-base-images.outputs.build-webserver }}
+        run: |
+          echo "Build reposync: $REPOSYNC"
+          echo "Build webserver: $WEBSERVER"
 
   build-repo-sync-image:
     name: Build ol-repo-sync image
     needs: check-base-images
 
-    if: github.event_name != 'schedule' || needs.check-base-images.outputs.build-reposync == 'YES'
+    if: github.event_name != 'schedule' || needs.check-base-images.outputs.build-reposync != 'NO'
 
     env:
       REGISTRY: ghcr.io
@@ -110,7 +122,7 @@ jobs:
     name: Build ol-repo-webserver image
 
     needs: check-base-images
-    if: github.event_name != 'schedule' || needs.check-base-images.outputs.build-reposync == 'YES'
+    if: github.event_name != 'schedule' || needs.check-base-images.outputs.build-reposync != 'NO'
     env:
       REGISTRY: ghcr.io
       IMAGE_NAME: djelibeybi/ol-repo-webserver
