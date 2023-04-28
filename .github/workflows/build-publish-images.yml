@@ -122,7 +122,7 @@ jobs:
     name: Build ol-repo-webserver image
 
     needs: check-base-images
-    if: github.event_name != 'schedule' || needs.check-base-images.outputs.build-reposync != 'NO'
+    if: github.event_name != 'schedule' || needs.check-base-images.outputs.build-webserver != 'NO'
     env:
       REGISTRY: ghcr.io
       IMAGE_NAME: djelibeybi/ol-repo-webserver
@@ -163,7 +163,6 @@ jobs:
       - name: Build and push Docker image
         id: build-and-push
         uses: docker/build-push-action@v3
-        if: github.event_name != 'schedule' || needs.check-base-images.outputs.build-webserver == 'YES'
         with:
           context: .
           file: ./Dockerfile.nginx
