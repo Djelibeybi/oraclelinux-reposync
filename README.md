@@ -22,7 +22,9 @@ For the best sync performance, add repos from the Oracle Linux yum server wherev
 
 ### Register with ULN (optional)
 
-Before content can be synced from ULN, the container has to be registered. The following command will map the local `rhn/` directory to `/etc/sysconfig/rhn/` inside the container and then automatically register the container using the ULN credentials provided in `config/uln.conf`:
+Before content can be synced from ULN, the container has to be registered. First, create a directory named `rhn` then run the following command. 
+
+This command maps the `rhn/` directory to `/etc/sysconfig/rhn/` inside the container then automatically registers the container using the ULN credentials provided in `config/uln.conf` (check the section on [storing ULN credentials](#store-uln-credentials) for more detail):
 
 ```bash
 docker run --rm -it \
@@ -32,7 +34,9 @@ docker run --rm -it \
   ghcr.io/djelibeybi/ol-repo-sync register
 ```
 
-This will take a few minutes with no output to the terminal but should return to the command prompt when completed.
+This will take a few minutes with no output to the terminal but should return to the command prompt when completed. 
+
+> If you don't sync from ULN, remove `-v "$PWD/rhn:/etc/sysconfig/rhn" \` from the command.
 
 If you mount a local directory to `/etc/sysconfig/rhn` each time you start a container, you should only have to register with ULN once, as the registration details are stored inside this directory.
 
@@ -72,11 +76,13 @@ The following command will sync the content of the repos configured in `config/r
 ```bash
 docker run --rm -it \
   --name ol-repo-sync \
-  -v "$PWD/rhn:/etc/sysconfig/rhn" \
+  -v "$PWD/rhn:/etc/sysconfig/rhn" \  # only required for ULN
   -v "$PWD/config:/config" \
   -v "$PWD/repo:/repo" \
   ghcr.io/djelibeybi/ol-repo-sync
 ```
+
+> If you are not syncing from ULN, remove `-v "$PWD/rhn:/etc/sysconfig/rhn" \` from the command.
 
 For each `yum` or `uln` source configured in `config/repos.json`, the sync process will:
 
